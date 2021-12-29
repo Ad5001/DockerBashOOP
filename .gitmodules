@@ -1,0 +1,3 @@
+[submodule "libraries/oop"]
+	path = libraries/oop
+	url = https://git.ad5001.eu/Ad5001/BashOOP

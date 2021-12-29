@@ -1,0 +1,33 @@
+#
+# DockerBashOOP - Implementation of BashOOP for Docker.
+# Copyright (C) 2021  Ad5001 <mail@ad5001.eu>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+namespace Docker
+
+createPropertyHolder Docker
+
+property Docker.RequiresSudo true 
+# NOTE: here we use it's declared as a string, because bash booleans using the true and false commands use exit codes,
+#       which requires to use more than one line to declare, thus add unnecessary complexity to the code.
+property Docker.Executable "$(which docker)"
+# This property is overridable for custom locations of the docker executable.
+
+static_class Utils "Utils.shc"
+
+class RunningContainer "RunningContainer.shc"
+
+class Image "Image.shc"

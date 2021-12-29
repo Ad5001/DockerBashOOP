@@ -1,0 +1,83 @@
+#
+# DockerBashOOP - Implementation of BashOOP for Docker.
+# Copyright (C) 2021  Ad5001 <mail@ad5001.eu>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+property RunningContainer.found
+property RunningContainer.id
+property RunningContainer.image
+property RunningContainer.created
+property RunningContainer.status
+property RunningContainer.ports
+property RunningContainer.name
+
+# Constructor to fetch a running container.
+# First argument is what to fetch, and second is matching attribute.
+# Example of first arguments: "named" to find by name, "created" to find by creation date, 
+# "withid" to find by container id, "withimage" to find by image, "withstatus" to check status, "withport" to find all having this port forwarded....
+# NOTE: Multiple containers can be matched. If so, all properties contain the value for each container per line.
+# NOTE: If no container is found, a message will be printed, and the constructor will exit with false.
+# Signature: (<string matchType>, <string matchValue>)
+RunningContainer.constructor() {
+    matchType=$1
+    matchValue=$2
+    lines=""
+    case $matchType in
+        withid)
+            lines="$(RunningContainer.findLineByValue 1 == $matchValue)"
+            ;;
+        withimage)
+            lines="$(RunningContainer.findLineByValue 2 == $matchValue)"
+            ;;
+        created)
+            lines="$(RunningContainer.findLineByValue 4 == $matchValue)"
+            ;;
+        withstatus)
+            lines="$(RunningContainer.findLineByValue 5 == $matchValue)"
+            ;;
+        withport)
+            lines="$(RunningContainer.findLineByValue 6 ~ $matchValue)"
+            ;;
+        named)
+            lines="$(RunningContainer.findLineByValue 7 == $matchValue)"
+            if [ -z "$lines" ]; then # Sometimes, when no ports are forwarded, the name is in the 6th field.
+                lines="$(RunningContainer.findLineByValue 6 == $matchValue)"
+            fi
+            ;;
+    esac
+    if [ ! -z $lines ]; then
+        this.found = true
+        this.id = "$(echo $lines | awk -F " {2,}" '{ print $1 }')"
+        this.image = "$(echo $lines | awk -F " {2,}" '{ print $2 }')"
+        this.created = "$(echo $lines | awk -F " {2,}" '{ print $4 }')"
+        this.status = "$(echo $lines | awk -F " {2,}" '{ print $5 }')"
+        this.ports = "$(echo $lines | awk -F " {2,}" '{ print $6 }')"
+        this.name = "$(echo $lines | awk -F " {2,}" '{ print $7 }')"
+    else
+        this.found = false
+    fi
+}
+
+# Finds all containers in "docker ps" with a certain field matching a value and returns their lines.
+# Signature: (<int fieldId>, <string operation>, <string fieldValue>)
+RunningContainer.findLineByValue() {
+    fieldId=$1
+    operation=$2
+    fieldValue=$3
+    docker ps | awk -F " {2,}" -v value="$fieldValue" 'NR>1 && $'"$fieldId"' '"$operation"' value'
+}
+
+
