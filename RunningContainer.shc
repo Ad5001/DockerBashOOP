@@ -44,7 +44,7 @@ RunningContainer.constructor() {
                 # The next argument is the value of the filter, so we skip it.
                 i=$(expr "$i" + 1)
                 filterValue=${args[$i]}
-                this._baseFilter $filterName $filterValue
+                this._baseFilter $filterName "$filterValue"
                 ;;
             running | exited | stopped)
                 this._baseFilter $filterName
@@ -56,7 +56,12 @@ RunningContainer.constructor() {
     done
     this._updateProperties
     # Print error message in STDERR when no containers are found.
-    if [ "$(this.found)" == false ]; then echo "No container found matching those filters." 1>&2; fi
+    if [ "$(this.found)" == false ]; then 
+        echo "No container found matching those filters." 1>&2
+    else
+        echo -n "Found $(this.count) containers matching filters: "
+        echo $(this.name)
+    fi
 }
 
 # Finds all containers in "docker ps" with a certain field matching a value and returns their lines.
@@ -77,16 +82,16 @@ RunningContainer._baseFilter() {
     #echo -n "Applying filter $filterName (previous count $(this.lines | wc -l))..." 1>&2
     case $filterName in
         with_id)
-            this.lines = "$(this.findLineByValue 1 == $filterValue)"
+            this.lines = "$(this.findLineByValue 1 == "$filterValue")"
             ;;
         with_image)
-            this.lines = "$(this.findLineByValue 2 == $filterValue)"
+            this.lines = "$(this.findLineByValue 2 == "$filterValue")"
             ;;
         created)
-            this.lines = "$(this.findLineByValue 4 == $filterValue)"
+            this.lines = "$(this.findLineByValue 4 == "$filterValue")"
             ;;
         with_status)
-            this.lines = "$(this.findLineByValue 5 == $filterValue)"
+            this.lines = "$(this.findLineByValue 5 == "$filterValue")"
             ;;
         running)
             this.lines = "$(RunningContainer.findLineByValue 5 ~ "Up")"
@@ -95,12 +100,12 @@ RunningContainer._baseFilter() {
             this.lines = "$(this.findLineByValue 5 "~" "Exited")"
             ;;
         with_port)
-            this.lines = "$(this.findLineByValue 6 ~ $filterValue)"
+            this.lines = "$(this.findLineByValue 6 ~ "$filterValue")"
             ;;
         named)
-            lines="$(this.findLineByValue 7 "~" $filterValue)"
+            lines="$(this.findLineByValue 7 "~" "$filterValue")"
             if [ -z "$lines" ]; then # Sometimes, when no ports are forwarded, the name is in the 6th field.
-                lines="$(this.findLineByValue 6 "~" $filterValue)"
+                lines="$(this.findLineByValue 6 "~" "$filterValue")"
             fi
             this.lines = "$lines"
             ;;
@@ -178,5 +183,21 @@ RunningContainer.remove() {
 # Signature: ([string[] arguments])
 RunningContainer.wait() {
     $this.applyToAll wait $@
+}
+
+# Displays the logs of the containers
+# Signature: ([string[] arguments])
+RunningContainer.logs() {
+    $this.applyToAll logs $@
+}
+
+# Executes a command to all the containers assigned to the instance.
+# Signature: ([string[] options] <string command>)
+RunningContainer.exec() {
+    cmd=${@[-1]}
+    options=${@:$(exec ${#@} - 1)}
+    for container in $(this.id); do
+        $(Docker.Utils.DockerCommand) exec $args $container $cmd
+    done
 }
 
