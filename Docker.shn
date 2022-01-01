@@ -20,11 +20,12 @@ namespace Docker
 
 createPropertyHolder Docker
 
-property Docker.RequiresSudo true 
 # NOTE: here we use it's declared as a string, because bash booleans using the true and false commands use exit codes,
 #       which requires to use more than one line to declare, thus add unnecessary complexity to the code.
-property Docker.Executable "$(which docker)"
+# Type: bool
+property Docker.RequiresSudo true 
 # This property is overridable for custom locations of the docker executable.
+property Docker.Executable "$(which docker)"
 
 static_class Utils "Utils.shc"
 
