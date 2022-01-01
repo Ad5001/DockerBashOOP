@@ -28,6 +28,6 @@ property Docker.Executable "$(which docker)"
 
 static_class Utils "Utils.shc"
 
-class RunningContainer "RunningContainer.shc"
+class Container "Container.shc"
 
 class Image "Image.shc"

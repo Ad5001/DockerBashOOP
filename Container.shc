@@ -16,34 +16,46 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-property RunningContainer.found false
-property RunningContainer.count 0
+# Only true when some containers matching all filters passed to the object have been found.
+# Type: bool
+property Container.found false
 
-property RunningContainer.lines
-property RunningContainer.id
-property RunningContainer.image
-property RunningContainer.created
-property RunningContainer.status
-property RunningContainer.ports
-property RunningContainer.name
+# Count of containers matching all filters found.
+# Type: int
+property Container.count 0
+
+# Summary of all informations found on containers. 
+# Containers are separated by a new line and values by " ; ".
+property Container.lines
+# Docker container ids of matched containers.
+property Container.id
+# Docker container images of matched containers.
+property Container.image
+# Dates of creation of matched containers.
+property Container.created
+# Statuses summary of matched containers.
+property Container.status
+# List of ports of matched containers.
+property Container.ports
+# Names of matched containers.
+property Container.name
 
 # Constructor to fetch one or many running container.
-# Arguments are the various filters to find containers. See: RunningContainer.filter for reference.
+# Arguments are the various filters to find containers. See: Container.filter for reference.
 # NOTE: Multiple containers can be matched. If so, all properties contain the value for each container per line.
 # NOTE: If no container is found, a message will be printed, and the constructor will exit with false.
 # Signature: ([string[] filters])
-RunningContainer.constructor() {
+Container.constructor() {
     args=( "$@" )
     this.lines = "$($(Docker.Utils.DockerCommand) ps --all | awk -F " {2,}" 'NR>1 { print $1,";",$2,";",$3,";",$4,";",$5,";",$6,($7 != "" ? (";"$7) : "") }')"
     # Apply filters
     for ((i=0; i < ${#args[@]}; i++)); do
-        filterName=${args[$i]}
-        
+        filterName="${args[$i]}"
         case $filterName in
             with_id | with_image | created | with_status | with_port | named)
                 # The next argument is the value of the filter, so we skip it.
                 i=$(expr "$i" + 1)
-                filterValue=${args[$i]}
+                filterValue="${args[$i]}"
                 this._baseFilter $filterName "$filterValue"
                 ;;
             running | exited | stopped)
@@ -65,8 +77,8 @@ RunningContainer.constructor() {
 }
 
 # Finds all containers in "docker ps" with a certain field matching a value and returns their lines.
-# Signature: (<int fieldId>, <string operation>, <string fieldValue>)
-RunningContainer.findLineByValue() {
+# Signature: (<int fieldId>, <string operation>, <string fieldValue>) -> string
+Container.findLineByValue() {
     fieldId=$1
     operation=$2
     fieldValue=$3
@@ -74,12 +86,12 @@ RunningContainer.findLineByValue() {
     this.lines | awk -F " ; " '$'"$fieldId"' '"$operation"' "'"$fieldValue"'" { print $1,";",$2,";",$3,";",$4,";",$5,";",$6,($7 != "" ? (";"$7) : "") }' 
 }
 
-# Internal function which filters. See: RunningContainer.filter for reference.
+# Internal function which filters. See: Container.filter for reference.
 # Signature: (<string filterName>, [string filterValue])
-RunningContainer._baseFilter() {
+Container._baseFilter() {
     filterName=$1
     filterValue=$2
-    #echo -n "Applying filter $filterName (previous count $(this.lines | wc -l))..." 1>&2
+    #echo "Applying filter $filterName (previous count $(this.lines | wc -l))..." 1>&2
     case $filterName in
         with_id)
             this.lines = "$(this.findLineByValue 1 == "$filterValue")"
@@ -94,7 +106,7 @@ RunningContainer._baseFilter() {
             this.lines = "$(this.findLineByValue 5 == "$filterValue")"
             ;;
         running)
-            this.lines = "$(RunningContainer.findLineByValue 5 ~ "Up")"
+            this.lines = "$(Container.findLineByValue 5 ~ "Up")"
             ;;
         exited | stopped)
             this.lines = "$(this.findLineByValue 5 "~" "Exited")"
@@ -115,7 +127,7 @@ RunningContainer._baseFilter() {
 
 # Updates property data from fetched lines.
 # No argument
-RunningContainer._updateProperties() {
+Container._updateProperties() {
     if [ ! -z "$(this.lines)" ]; then
         this.found = true
         this.count = $(this.lines | wc -l)
@@ -143,8 +155,8 @@ RunningContainer._updateProperties() {
 # - "with_port" to find all having this port forwarded
 # - "running" to find all containers running
 # - "exited" or "stopped" to find all containers stopped.
-# Signature: (<string filterName>, [string filterValue])
-RunningContainer.filter() {
+# Signature: (<string filterName>, [string filterValue]) -> void
+Container.filter() {
     filterName=$1
     filterValue=$2
     this._baseFilter $filterName $filterValue
@@ -152,8 +164,8 @@ RunningContainer.filter() {
 }
 
 # Applies a docker command to all containers
-# Signature: (<string command>, [string[] arguments])
-RunningContainer.applyToAll() {
+# Signature: (<string command>, [string[] arguments]) -> void|string
+Container.applyToAll() {
     cmd=$1
     args=${@:2}
     for container in $(this.id); do
@@ -162,38 +174,38 @@ RunningContainer.applyToAll() {
 }
 
 # Kills all containers assigned to this instance.
-# Signature: ([string[] arguments])
-RunningContainer.kill() {
+# Signature: ([string[] arguments]) -> void
+Container.kill() {
     $this.applyToAll kill $@
 }
 
 # Removes all containers assigned to this instance.
-# Signature: ([string[] arguments])
-RunningContainer.rm() {
+# Signature: ([string[] arguments]) -> void
+Container.rm() {
     $this.applyToAll rm $@
 }
 
 # Removes all containers assigned to this instance.
-# Signature: ([string[] arguments])
-RunningContainer.remove() {
+# Signature: ([string[] arguments]) -> void
+Container.remove() {
     $this.applyToAll rm $@
 }
 
 # Waits for all containers assigned to this instance to stop and echo their exit code.
-# Signature: ([string[] arguments])
-RunningContainer.wait() {
+# Signature: ([string[] arguments]) -> void
+Container.wait() {
     $this.applyToAll wait $@
 }
 
 # Displays the logs of the containers
-# Signature: ([string[] arguments])
-RunningContainer.logs() {
+# Signature: ([string[] arguments]) -> string
+Container.logs() {
     $this.applyToAll logs $@
 }
 
 # Executes a command to all the containers assigned to the instance.
-# Signature: ([string[] options] <string command>)
-RunningContainer.exec() {
+# Signature: ([string[] options] <string command>) -> void|string
+Container.exec() {
     cmd=${@[-1]}
     options=${@:$(exec ${#@} - 1)}
     for container in $(this.id); do

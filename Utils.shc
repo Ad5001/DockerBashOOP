@@ -19,14 +19,14 @@
 # This class contains various utils required for Docker.
 
 # Returns the base command for docker, with it's executable and sudo if necessary.
-# Returns string.
+# Signature: () -> string
 Utils.DockerCommand() { 
     if [ $(Docker.RequiresSudo) == true ]; then echo -n "sudo "; fi
     echo "$(Docker.Executable)"
 }
 
 # Checks if the user has permission to use docker.
-# Retuns bool.
+# Signature: () -> bool
 Utils.hasPermission() {
     $(Utils.DockerCommand) ps 2>&1 | grep -q "permission denied"
     # Check status of last command. If permission denied is found, then we do not have permission to use docker.
