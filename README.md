@@ -5,7 +5,7 @@ Small implementation of Docker for BashOOP.
 
 ### Documentation
 
-You can generate the documentation using my [bash DocGenerator](https://git.ad5001.eu/Ad5001/DocGenerator).
+You can generate the documentation using my [BashDocGenerator](https://git.ad5001.eu/Ad5001/BashDocGenerator).
 
 ### How to use
 
