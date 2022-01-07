@@ -1,6 +1,6 @@
 #
 # DockerBashOOP - Implementation of BashOOP for Docker.
-# Copyright (C) 2021  Ad5001 <mail@ad5001.eu>
+# Copyright (C) 2022  Ad5001 <mail@ad5001.eu>
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -201,6 +201,12 @@ Container.wait() {
 # Signature: ([string[] arguments]) -> string
 Container.logs() {
     $this.applyToAll logs $@
+}
+
+# Starts all stopped containers
+# Signature: ([string[] arguments]) -> string
+Container.start() {
+    $this.applyToAll start $@
 }
 
 # Executes a command to all the containers assigned to the instance.
